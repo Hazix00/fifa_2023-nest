@@ -1,9 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { INestApplication, VersioningType, ValidationPipe, Logger } from '@nestjs/common';
+import {
+  INestApplication,
+  VersioningType,
+  ValidationPipe,
+  Logger,
+} from '@nestjs/common';
 import { TransformInterceptor } from './interceptors/transform.interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiResponseExtraModels } from './common/dtos/api-response.dto';
+import { PlayerWithFormattedSalary } from './modules/players/dtos';
 
 const globalPrefix = 'api';
 const defaultVersion = '1';
@@ -34,7 +40,7 @@ export function setupSwagger(app: INestApplication) {
     .addBearerAuth({ type: 'http' })
     .build();
   const document = SwaggerModule.createDocument(app, config, {
-    extraModels: apiResponseExtraModels,
+    extraModels: [...apiResponseExtraModels, PlayerWithFormattedSalary],
   });
   SwaggerModule.setup('api', app, document);
 }

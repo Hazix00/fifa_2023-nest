@@ -3,10 +3,10 @@ import { ApiOkResponse, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 
 export class ApiResponseDto<TModel> {
   @ApiProperty()
-  statusCode: number;
+  statusCode?: number;
 
   @ApiProperty()
-  message: string;
+  message?: string;
 
   data: TModel;
 }
