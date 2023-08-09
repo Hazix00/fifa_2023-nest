@@ -6,8 +6,8 @@ import {
   } from '@nestjs/common';
   import { Observable } from 'rxjs';
   import { map } from 'rxjs/operators';
-import { ApiResponseDto } from 'src/common/dtos/api-response.dto';
-import { ResponseMessage } from 'src/common/enums/response-message.enum';
+import { ApiResponseDto, PaginationResponseDto } from '../common/dtos';
+import { ResponseMessage } from '../common/enums';
   
 
   @Injectable()
@@ -19,7 +19,7 @@ import { ResponseMessage } from 'src/common/enums/response-message.enum';
     intercept(
       context: ExecutionContext,
       next: CallHandler,
-    ): Observable<ApiResponseDto<T>> {
+    ): Observable<ApiResponseDto<T> | PaginationResponseDto<T>> {
       const { statusCode } = context.switchToHttp().getResponse();
       const { method } = context.switchToHttp().getRequest();
   
@@ -42,11 +42,26 @@ import { ResponseMessage } from 'src/common/enums/response-message.enum';
       }
   
       return next.handle().pipe(
-        map((data) => ({
-          statusCode,
-          message: this.message,
-          data,
-        })),
+        map((data) => {
+          let res: ApiResponseDto<T> | PaginationResponseDto<T> = {
+            statusCode,
+            message: this.message,
+            data
+          }
+          if(data.data) {
+            res = {
+              ...res,
+              ...data
+            }
+          }
+          else {
+            res = {
+              ...res,
+              data
+            }
+          }
+          return res;
+        }),
       );
     }
   }

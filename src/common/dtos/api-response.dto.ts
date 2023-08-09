@@ -41,17 +41,23 @@ export const ApiResponse = <TModel extends Type<any>>(
   );
 };
 
-export class PaginatedDto<TModel> extends ApiResponseDto<TModel> {
+export interface PaginationDto<T> {
+  page: number;
+  limit: number;
+  total: number;
+  data: T;
+}
+
+export class PaginationResponseDto<TModel>
+  extends ApiResponseDto<TModel>
+  implements PaginationDto<TModel>
+{
   @ApiProperty()
   page: number;
   @ApiProperty()
   limit: number;
   @ApiProperty()
   total: number;
-  @ApiProperty()
-  next?: number;
-  @ApiProperty()
-  prev?: number;
 }
 
 export const ApiPaginatedResponse = <TModel extends Type<any>>(
@@ -62,7 +68,7 @@ export const ApiPaginatedResponse = <TModel extends Type<any>>(
       schema: {
         title: `PaginatedResponseOf${model.name}`,
         allOf: [
-          { $ref: getSchemaPath(PaginatedDto) },
+          { $ref: getSchemaPath(PaginationResponseDto) },
           {
             properties: {
               data: {
@@ -77,7 +83,4 @@ export const ApiPaginatedResponse = <TModel extends Type<any>>(
   );
 };
 
-export const apiResponseExtraModels = [
-  ApiResponseDto,
-  PaginatedDto
-];
+export const apiResponseExtraModels = [ApiResponseDto, PaginationResponseDto];
