@@ -40,7 +40,7 @@ export function setupSwagger(app: INestApplication) {
     .addBearerAuth({ type: 'http' })
     .build();
   const document = SwaggerModule.createDocument(app, config, {
-    extraModels: [...apiResponseExtraModels, PlayerWithFormattedSalary],
+    extraModels: apiResponseExtraModels,
   });
   SwaggerModule.setup('api', app, document);
 }
