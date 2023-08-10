@@ -1,28 +1,77 @@
-import { Body, Controller, Get, Post, Query, ValidationPipe } from '@nestjs/common';
-import { ApiBadRequestResponse, ApiExtraModels, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  Logger,
+  Param,
+  Post,
+  Put,
+  Query,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiExtraModels,
+  ApiInternalServerErrorResponse,
+  ApiTags,
+  ApiConsumes,
+  ApiBody
+} from '@nestjs/swagger';
 import { CreatePlayerDto, PlayerDto, PlayersQueryDto } from './dtos';
 import { PlayersService } from './players.service';
-import { ApiPaginatedResponse, ApiResponse, PaginationDto } from '../../common/dtos';
+import {
+  ApiPaginatedResponse,
+  ApiResponse,
+} from '../../common/dtos';
 import { PlayerWithFormattedSalary } from './dtos';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('players')
 @Controller('players')
 @ApiExtraModels(PlayerWithFormattedSalary, PlayerDto)
 export class PlayersController {
+  logger = new Logger(PlayersController.name);
   constructor(private readonly playersService: PlayersService) {}
   @Get()
   @ApiPaginatedResponse(PlayerWithFormattedSalary)
-  findAll(
-    @Query() playersQuerDto: PlayersQueryDto,
-  ): Promise<PaginationDto<PlayerWithFormattedSalary[]>> {
-    const { page, limit } = playersQuerDto;
+  @ApiInternalServerErrorResponse()
+  findAll(@Query() playersQueryDto: PlayersQueryDto) {
+    const { page, limit } = playersQueryDto;
     return this.playersService.findAll(page, limit);
-  } 
+  }
 
   @Post()
   @ApiResponse(PlayerDto)
+  @ApiConflictResponse({
+    description: 'Player already exists with the same firstname and lastname',
+  })
   @ApiBadRequestResponse()
   create(@Body() createPlayerDto: CreatePlayerDto) {
     return this.playersService.create(createPlayerDto);
+  }
+
+  @Put(':id/update-player-picture')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async updatePlayerPicture(
+    @Param('id') playerId: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    this.logger.debug(`Updating player picture for player ${playerId} with file`);
+
+    return this.playersService.updatePlayerPicture(playerId, file);
   }
 }

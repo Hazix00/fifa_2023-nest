@@ -4,15 +4,15 @@ import { Transform } from "class-transformer";
 import { IsNumber } from "class-validator";
 
 export class PlayersQueryDto {
-    @ApiProperty({ required: false })
+    @ApiProperty({ required: false, default: 1 })
     @Transform(({ value }) => parseInt(value))
     @IsNumber()
     @Optional()
-    page = 1;
+    page: number = 1;
 
-    @ApiProperty({ required: false })
+    @ApiProperty({ required: false, default: 6 })
     @Transform(({ value }) => parseInt(value))
     @IsNumber()
     @Optional()
-    limit = 6;
+    limit: number = 6;
 }
