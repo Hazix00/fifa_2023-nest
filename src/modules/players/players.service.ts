@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Player } from '@prisma/client';
 import { PaginationDto } from '../../common/dtos';
-import { PlayerWithFormattedSalary } from './dtos';
+import { PlayerWithFormattedSalary, UpdatePlayerDto } from './dtos';
 import { PrismaService } from '../../common/services/prisma.service';
 import { CreatePlayerDto } from './dtos/create-player.dto';
 import { FirebaseStorageService } from '../firebase-storage/firebase-storage.service';
@@ -97,5 +97,24 @@ export class PlayersService {
     });
 
     return "Photo sauvegardée avec succès";
+  }
+
+  async update(id: number, updatePlayerDto: UpdatePlayerDto) {
+    await this.findOne(id);
+    
+    try {
+      await this.prisma.player.update({
+        where: { id },
+        data: updatePlayerDto
+      })
+    } catch (error) {
+      if(error.code === 'P2002') {
+        throw new ConflictException('Player already exists');
+      }
+      this.logger.error(error);
+      throw new BadRequestException(error.message);
+    }
+
+    return 'Informations sauvegardée avec succès';
   }
 }
