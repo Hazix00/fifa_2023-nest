@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PlayersService } from './players.service';
-import { playerStub, playersStub } from './test/stubs/players.stubs';
+import { playerStub, playersStub, updatePlayerPictureDto } from './test/stubs/players.stubs';
 import { PrismaService } from '../../common/services/prisma.service';
 import { CreatePlayerDto } from './dtos/create-player.dto';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
@@ -173,21 +173,7 @@ describe('PlayersService', () => {
 
     it('then update player picture URL and return updated player', async () => {
       const mockPlayer = playerStub();
-      const updateDto: { playerId: number; file: Express.Multer.File } = {
-        playerId: 1,
-        file: {
-          fieldname: "file",
-          originalname: "Screenshot 2023-08-08 at 17.02.52.png",
-          encoding: "7bit",
-          mimetype: "image/png",
-          buffer: Buffer.from("test-image-buffer", "binary"),
-          size: 293471,
-          stream: null,
-          filename: "Screenshot 2023-08-08 at 17.02.52.png",
-          destination: null,
-          path: null,
-        },
-      };
+      const updateDto = updatePlayerPictureDto();
       const updatedPlayerMock = { ...mockPlayer, pictureUrl: 'download-url' };
 
       (prismaService.player.findUnique as jest.Mock).mockResolvedValue(mockPlayer);
