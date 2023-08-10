@@ -17,13 +17,21 @@ import {
   ApiInternalServerErrorResponse,
   ApiTags,
   ApiConsumes,
-  ApiBody
+  ApiBody,
+  ApiOkResponse,
+  ApiNotFoundResponse,
 } from '@nestjs/swagger';
-import { CreatePlayerDto, PlayerDto, PlayersQueryDto } from './dtos';
+import {
+  CreatePlayerDto,
+  PlayerDto,
+  PlayersQueryDto,
+  UpdatePlayerDto,
+} from './dtos';
 import { PlayersService } from './players.service';
 import {
   ApiPaginatedResponse,
   ApiResponse,
+  ApiResponseDto,
 } from '../../common/dtos';
 import { PlayerWithFormattedSalary } from './dtos';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -52,6 +60,18 @@ export class PlayersController {
     return this.playersService.create(createPlayerDto);
   }
 
+  @Put(':id')
+  @ApiResponse(String)
+  @ApiNotFoundResponse({ description: 'Player not found' })
+  @ApiConflictResponse({
+    description: 'Player already exists with the same firstname and lastname',
+  })
+  @ApiBadRequestResponse({ description: 'Error while updating player' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  update(@Param('id') id: number, @Body() updatePlayerDto: UpdatePlayerDto) {
+    return this.playersService.update(id, updatePlayerDto);
+  }
+
   @Put(':id/update-player-picture')
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -65,12 +85,19 @@ export class PlayersController {
       },
     },
   })
+  @ApiResponse(String)
+  @ApiNotFoundResponse({ description: 'Player not found' })
+  @ApiInternalServerErrorResponse({
+    description: 'Error while updating player picture',
+  })
   @UseInterceptors(FileInterceptor('file'))
   async updatePlayerPicture(
     @Param('id') playerId: number,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    this.logger.debug(`Updating player picture for player ${playerId} with file`);
+    this.logger.debug(
+      `Updating player picture for player ${playerId} with file`,
+    );
 
     return this.playersService.updatePlayerPicture(playerId, file);
   }
