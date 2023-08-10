@@ -24,6 +24,7 @@ describe('PlayersService', () => {
               create: jest.fn(),
               findUnique: jest.fn(),
               update: jest.fn(),
+              delete: jest.fn(),
             },
           },
         },
@@ -285,6 +286,54 @@ describe('PlayersService', () => {
         data: updatePlayerDtoMock,
       })
     })
+  });
+
+  describe('when delete is called', () => {
+    it('then delete should be defined', () => {
+      expect(playersService.delete).toBeDefined();
+    })
+
+    it('then return the deleted player', async () => {
+      const mockPlayer = playerStub();
+
+      jest.spyOn(playersService, 'findOne').mockResolvedValue(mockPlayer);
+      (prismaService.player.delete as jest.Mock).mockResolvedValue(mockPlayer);
+
+      const message = await playersService.delete(1);
+
+      // Assertions
+      expect(prismaService.player.delete).toHaveBeenCalledTimes(1);
+      expect(prismaService.player.delete).toHaveBeenCalledWith({
+        where: { id: 1 },
+      })
+      expect(message).toEqual('Joueur supprimé avec succès');
+    })
+
+    it('then throw error if player does not exist', async () => {
+      jest.spyOn(playersService, 'findOne').mockRejectedValue(new NotFoundException());
+
+      // Assertions
+      await expect(playersService.delete(1)).rejects.toThrow(NotFoundException);
+
+      expect(playersService.findOne).toHaveBeenCalledTimes(1);
+      expect(playersService.findOne).toHaveBeenCalledWith(1);
+    })
+
+    it('then throw BadRequestException for other errors', async () => {
+      const mockPlayer = playerStub();
+
+      jest.spyOn(playersService, 'findOne').mockResolvedValue(mockPlayer);
+      (prismaService.player.delete as jest.Mock).mockRejectedValue(new Error('something went wrong'));
+
+      // Assertions
+      await expect(playersService.delete(1)).rejects.toThrow(BadRequestException);
+
+      expect(prismaService.player.delete).toHaveBeenCalledTimes(1);
+      expect(prismaService.player.delete).toHaveBeenCalledWith({
+        where: { id: 1 },
+      })
+    })
+
   });
 });
 
