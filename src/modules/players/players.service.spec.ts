@@ -3,11 +3,13 @@ import { PlayersService } from './players.service';
 import { playerStub, playersStub } from './test/stubs/players.stubs';
 import { PrismaService } from '../../common/services/prisma.service';
 import { CreatePlayerDto } from './dtos/create-player.dto';
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { FirebaseStorageService } from '../firebase-storage/firebase-storage.service';
 
 describe('PlayersService', () => {
   let playersService: PlayersService;
   let prismaService: PrismaService;
+  let firebaseStorageService: FirebaseStorageService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -21,7 +23,14 @@ describe('PlayersService', () => {
               count: jest.fn(),
               create: jest.fn(),
               findUnique: jest.fn(),
+              update: jest.fn(),
             },
+          },
+        },
+        {
+          provide: FirebaseStorageService,
+          useValue: {
+            uploadFile: jest.fn().mockResolvedValue('download-url'), // Mock the public URL
           },
         },
       ],
@@ -29,6 +38,8 @@ describe('PlayersService', () => {
 
     playersService = module.get(PlayersService);
     prismaService = module.get(PrismaService);
+    firebaseStorageService = module.get(FirebaseStorageService);
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -124,6 +135,86 @@ describe('PlayersService', () => {
       });
     });
   });
+
+  describe('when findOne is called', () => {
+    it('then findOne should be defined', () => {
+      expect(playersService.findOne).toBeDefined();
+    });
+
+    it('then return the player', async () => {
+      const mockPlayer = playerStub();
+      (prismaService.player.findUnique as jest.Mock).mockResolvedValue(mockPlayer);
+
+      const player = await playersService.findOne(1);
+      // Assertions
+      expect(prismaService.player.findUnique).toHaveBeenCalledTimes(1);
+      expect(prismaService.player.findUnique).toHaveBeenCalledWith({
+        where: { id: 1 },
+      })
+      expect(player).toEqual(mockPlayer);
+    })
+
+    it('then throw error if player does not exist', async () => {
+      (prismaService.player.findUnique as jest.Mock).mockResolvedValue(null);
+      // Assertions
+      await expect(playersService.findOne(1)).rejects.toThrow(NotFoundException);
+
+      expect(prismaService.player.findUnique).toHaveBeenCalledTimes(1);
+      expect(prismaService.player.findUnique).toHaveBeenCalledWith({
+        where: { id: 1 },
+      })
+    })
+  })
+
+  describe('when updatePlayerPicture is called', () => {
+    it('then updatePlayerPicture should be defined', () => {
+      expect(playersService.updatePlayerPicture).toBeDefined();
+    });
+
+    it('then update player picture URL and return updated player', async () => {
+      const mockPlayer = playerStub();
+      const updateDto: { playerId: number; file: Express.Multer.File } = {
+        playerId: 1,
+        file: {
+          fieldname: "file",
+          originalname: "Screenshot 2023-08-08 at 17.02.52.png",
+          encoding: "7bit",
+          mimetype: "image/png",
+          buffer: Buffer.from("test-image-buffer", "binary"),
+          size: 293471,
+          stream: null,
+          filename: "Screenshot 2023-08-08 at 17.02.52.png",
+          destination: null,
+          path: null,
+        },
+      };
+      const updatedPlayerMock = { ...mockPlayer, pictureUrl: 'download-url' };
+
+      (prismaService.player.findUnique as jest.Mock).mockResolvedValue(mockPlayer);
+      (prismaService.player.update as jest.Mock).mockResolvedValue(updatedPlayerMock);
+      jest.spyOn(playersService, 'findOne').mockResolvedValue(mockPlayer);
+
+      const messge = await playersService.updatePlayerPicture(updateDto.playerId, updateDto.file);
+
+      // Assertions
+      expect(playersService.findOne).toHaveBeenCalledTimes(1);
+      expect(playersService.findOne).toHaveBeenCalledWith(updateDto.playerId);
+
+      expect(firebaseStorageService.uploadFile).toHaveBeenCalledTimes(1);
+      expect(firebaseStorageService.uploadFile).toHaveBeenCalledWith(
+        updateDto.file
+      );
+
+      expect(prismaService.player.update).toHaveBeenCalledTimes(1);
+      expect(prismaService.player.update).toHaveBeenCalledWith({
+        where: { id: updateDto.playerId },
+        data: { pictureURl: 'download-url' },
+      })
+
+      expect(messge).toEqual('Photo sauvegardée avec succès');
+    });
+  });
+
 });
 
 
