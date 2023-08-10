@@ -62,7 +62,17 @@ export class PlayersController {
   }
 
   @Put(':id')
-  @ApiResponse(String)
+  @ApiOkResponse({
+    description: 'Informations sauvegardées avec succès',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        statusCode: { type: 'integer' },
+        data: { type: 'string' },
+      },
+    },
+  })
   @ApiNotFoundResponse({ description: 'Player not found' })
   @ApiConflictResponse({
     description: 'Player already exists with the same firstname and lastname',
@@ -86,7 +96,17 @@ export class PlayersController {
       },
     },
   })
-  @ApiResponse(String)
+  @ApiOkResponse({
+    description: 'Photo sauvegardée avec succès',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        statusCode: { type: 'integer' },
+        data: { type: 'string' },
+      },
+    },
+  })
   @ApiNotFoundResponse({ description: 'Player not found' })
   @ApiInternalServerErrorResponse({
     description: 'Error while updating player picture',
@@ -104,7 +124,17 @@ export class PlayersController {
   }
 
   @Delete(':id')
-  @ApiResponse(String)
+  @ApiOkResponse({
+    description: 'Joueur supprimé avec succès',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        statusCode: { type: 'integer' },
+        data: { type: 'string' },
+      },
+    },
+  })
   @ApiNotFoundResponse({ description: 'Player not found' })
   @ApiBadRequestResponse({ description: 'Error while deleting player' })
   @ApiInternalServerErrorResponse({
