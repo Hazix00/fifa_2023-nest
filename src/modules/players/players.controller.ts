@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Logger,
   Param,
@@ -100,5 +101,16 @@ export class PlayersController {
     );
 
     return this.playersService.updatePlayerPicture(playerId, file);
+  }
+
+  @Delete(':id')
+  @ApiResponse(String)
+  @ApiNotFoundResponse({ description: 'Player not found' })
+  @ApiBadRequestResponse({ description: 'Error while deleting player' })
+  @ApiInternalServerErrorResponse({
+    description: 'Internal server error',
+  })
+  delete(@Param('id') id: number) {
+    return this.playersService.delete(id);
   }
 }
