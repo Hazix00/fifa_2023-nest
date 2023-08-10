@@ -28,7 +28,11 @@ export class FirebaseStorageService {
     }
 
     const fileName = `${Date.now()}-${file.originalname}`;
-    file.path = path.join(__dirname, '../../..','temp',fileName);
+    const destination = path.join(__dirname, '../../..','temp',fileName);
+    if(!fs.existsSync(destination)) {
+      fs.mkdirSync(destination);
+    }
+    file.path = path.join(destination,fileName);
 
     await fs.promises.writeFile(file.path, file.buffer);
 
