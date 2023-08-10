@@ -23,6 +23,7 @@ describe('PlayersController', () => {
             create: jest.fn(),
             update: jest.fn(),
             updatePlayerPicture: jest.fn(),
+            delete: jest.fn(),
           },
         },
       ],
@@ -188,5 +189,45 @@ describe('PlayersController', () => {
       expect(playersService.update).toHaveBeenCalledTimes(1);
       expect(playersService.update).toHaveBeenCalledWith(1, updatePlayerDtoMock);
     })
+  });
+
+  describe('when delete is called', () => {
+    test('then delete should be defined', async () => {
+      expect(playersController.delete).toBeDefined();
+    });
+
+    test('then delete should be called and return the deleted player', async () => {
+      (playersService.delete as jest.Mock).mockResolvedValue('Joueur supprimé avec succès');
+
+      const message = await playersController.delete(1);
+
+      //Assertions
+      expect(playersService.delete).toHaveBeenCalledTimes(1);
+      expect(playersService.delete).toHaveBeenCalledWith(1);
+
+      expect(message).toEqual('Joueur supprimé avec succès');
+
+    })
+
+    test('then throw error if player does not exist', async () => {
+      (playersService.delete as jest.Mock).mockRejectedValue(new NotFoundException('Player not found'));
+
+      await expect(playersController.delete(1)).rejects.toThrowError(NotFoundException);
+
+      //Assertions
+      expect(playersService.delete).toHaveBeenCalledTimes(1);
+      expect(playersService.delete).toHaveBeenCalledWith(1);
+    })
+
+    test('then throw BadRequestException for other errors', async () => {
+      (playersService.delete as jest.Mock).mockRejectedValue(new BadRequestException('Error while deleting player'));
+
+      await expect(playersController.delete(1)).rejects.toThrowError(BadRequestException);
+
+      //Assertions
+      expect(playersService.delete).toHaveBeenCalledTimes(1);
+      expect(playersService.delete).toHaveBeenCalledWith(1);
+    })
+
   });
 });
