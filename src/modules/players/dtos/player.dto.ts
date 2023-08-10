@@ -15,7 +15,6 @@ export class DeviseEmptyIfSalaryIsEmpty
   implements ValidatorConstraintInterface
 {
   validate(salary: number, args: ValidationArguments) {
-    console.log('salary', salary, args.object['devise']);
     return (
       (!!salary === false && !!args.object['devise'] === false) ||
       !!salary

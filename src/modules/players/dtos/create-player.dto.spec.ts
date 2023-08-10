@@ -45,7 +45,6 @@ describe('CreatePlayerDto', () => {
     delete dto.goal;
 
     const errors = await validate(dto);
-    console.log(errors);
 
     expect(errors.length).toBe(0);
   });
