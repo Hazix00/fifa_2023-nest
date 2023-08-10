@@ -274,3 +274,22 @@ export const playersPaginatedStub = (): PaginationResponseDto<
   limit: 6,
   total: 6,
 });
+
+export const updatePlayerPictureDto = (): {
+  playerId: number;
+  file: Express.Multer.File;
+} => ({
+  playerId: 1,
+  file: {
+    fieldname: 'file',
+    originalname: 'Screenshot 2023-08-08 at 17.02.52.png',
+    encoding: '7bit',
+    mimetype: 'image/png',
+    buffer: Buffer.from('test-image-buffer', 'binary'),
+    size: 293471,
+    stream: null,
+    filename: 'Screenshot 2023-08-08 at 17.02.52.png',
+    destination: null,
+    path: null,
+  },
+});
