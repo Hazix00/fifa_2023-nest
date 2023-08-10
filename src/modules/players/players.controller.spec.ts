@@ -1,7 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PlayersController } from './players.controller';
 import { PlayersService } from './players.service';
-import { playersPaginatedStub, playersStub } from './test/stubs/players.stubs';
+import { playerStub, playersPaginatedStub, playersStub } from './test/stubs/players.stubs';
+import { CreatePlayerDto } from './dtos';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 
 jest.mock('./players.service');
 
@@ -17,6 +19,7 @@ describe('PlayersController', () => {
           provide: PlayersService,
           useValue: {
             findAll: jest.fn(),
+            create: jest.fn(),
           },
         },
       ],
@@ -55,4 +58,58 @@ describe('PlayersController', () => {
       expect(result.data).toEqual(playersPaginatedStub().data);
     });
   });
+
+  describe('when create is called', () => {
+    const mockPlayer = playerStub();
+
+    const mockCreatePlayer: CreatePlayerDto = {
+      firstname: mockPlayer.firstname,
+      lastname: mockPlayer.lastname,
+      goal: mockPlayer.goal,
+      salary: mockPlayer.salary,
+      devise: mockPlayer.devise,
+    };
+    test('then create should be called and return the created player', async () => {
+      // Use your stub data for the mock implementation
+      (playersService.create as jest.Mock).mockResolvedValue(playersStub());
+
+      const player = await playersController.create(mockCreatePlayer);
+
+      //Assertions
+      expect(playersService.create).toHaveBeenCalledTimes(1);
+      expect(playersService.create).toBeCalledWith(mockCreatePlayer);
+
+      expect(player).toEqual(playersStub());
+    });
+
+    test('then throw error if player with the same firstname and lastname already exists', async () => {
+      (playersService.create as jest.Mock).mockRejectedValue(
+        new ConflictException('Player already exists'),
+      );
+
+      //Assertions
+      await expect(playersController.create(mockCreatePlayer)).rejects.toThrowError(
+        ConflictException
+      );
+
+      expect(playersService.create).toHaveBeenCalledTimes(1);
+      expect(playersService.create).toBeCalledWith(mockCreatePlayer);
+
+    })
+
+    test('then throw BadRequestException for other errors', async () => {
+      (playersService.create as jest.Mock).mockRejectedValue(
+        new BadRequestException(),
+      );
+
+      //Assertions
+      await expect(playersController.create(mockCreatePlayer)).rejects.toThrowError(
+        BadRequestException
+      );
+
+      expect(playersService.create).toHaveBeenCalledTimes(1);
+      expect(playersService.create).toBeCalledWith(mockCreatePlayer);
+
+    }) 
+  })
 });
