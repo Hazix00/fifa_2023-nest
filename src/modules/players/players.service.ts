@@ -1,14 +1,24 @@
-import { BadRequestException, ConflictException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { Player } from '@prisma/client';
 import { PaginationDto } from '../../common/dtos';
 import { PlayerWithFormattedSalary } from './dtos';
 import { PrismaService } from '../../common/services/prisma.service';
 import { CreatePlayerDto } from './dtos/create-player.dto';
+import { FirebaseStorageService } from '../firebase-storage/firebase-storage.service';
 
 @Injectable()
 export class PlayersService {
   logger = new Logger(PlayersService.name);
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly firebaseStorageService: FirebaseStorageService,
+  ) {}
   async findAll(
     page: number,
     limit: number,
@@ -58,8 +68,34 @@ export class PlayersService {
         throw new ConflictException('Player already exists');
       }
       this.logger.error(e);
-      throw new BadRequestException('Something went wrong');
+      throw new BadRequestException(e.messge);
     }
     return player;
+  }
+
+  async findOne(id: number): Promise<Player> {
+    const player = await this.prisma.player.findUnique({
+      where: { id },
+    });
+    if (!player) {
+      throw new NotFoundException('Player not found');
+    }
+    return player;
+  }
+
+  async updatePlayerPicture(playerId: number, file: Express.Multer.File) {
+    await this.findOne(playerId);
+
+    this.logger.debug(`Updating player picture for player ${playerId} with file`);
+
+    const publicUrl = await this.firebaseStorageService.uploadFile(file);
+
+    // Update the player's pictureURl in the database
+    await this.prisma.player.update({
+      where: { id: playerId },
+      data: { pictureURl: publicUrl }
+    });
+
+    return "Photo sauvegardée avec succès";
   }
 }
