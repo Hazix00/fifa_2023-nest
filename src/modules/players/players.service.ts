@@ -68,7 +68,7 @@ export class PlayersService {
         throw new ConflictException('Player already exists');
       }
       this.logger.error(e);
-      throw new BadRequestException(e.messge);
+      throw new BadRequestException('Error while creating player');
     }
     return player;
   }
@@ -86,35 +86,51 @@ export class PlayersService {
   async updatePlayerPicture(playerId: number, file: Express.Multer.File) {
     await this.findOne(playerId);
 
-    this.logger.debug(`Updating player picture for player ${playerId} with file`);
+    this.logger.debug(
+      `Updating player picture for player ${playerId} with file`,
+    );
 
     const publicUrl = await this.firebaseStorageService.uploadFile(file);
 
     // Update the player's pictureURl in the database
     await this.prisma.player.update({
       where: { id: playerId },
-      data: { pictureURl: publicUrl }
+      data: { pictureURl: publicUrl },
     });
 
-    return "Photo sauvegardée avec succès";
+    return 'Photo sauvegardée avec succès';
   }
 
   async update(id: number, updatePlayerDto: UpdatePlayerDto) {
     await this.findOne(id);
-    
+
     try {
       await this.prisma.player.update({
         where: { id },
-        data: updatePlayerDto
-      })
+        data: updatePlayerDto,
+      });
     } catch (error) {
-      if(error.code === 'P2002') {
+      if (error.code === 'P2002') {
         throw new ConflictException('Player already exists');
       }
       this.logger.error(error);
-      throw new BadRequestException(error.message);
+      throw new BadRequestException('Error while updating player');
     }
 
     return 'Informations sauvegardée avec succès';
+  }
+
+  async delete(id: number) {
+    await this.findOne(id);
+
+    try {
+      await this.prisma.player.delete({
+        where: { id },
+      });
+      return 'Joueur supprimé avec succès';
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException('Error while deleting player');
+    }
   }
 }
