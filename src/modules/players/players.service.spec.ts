@@ -201,6 +201,91 @@ describe('PlayersService', () => {
     });
   });
 
+  describe('when update is called', () => {
+    it('then update should be defined', () => {
+      expect(playersService.update).toBeDefined();
+    })
+
+    it('then return the updated player', async () => {
+      const mockPlayer = playerStub();
+      const updatePlayerDtoMock = playerStub();
+      delete updatePlayerDtoMock.id;
+
+      jest.spyOn(playersService, 'findOne').mockResolvedValue(mockPlayer);
+      (prismaService.player.update as jest.Mock).mockResolvedValue(mockPlayer);
+
+      const message = await playersService.update(1, updatePlayerDtoMock);
+
+      // Assertions
+      expect(playersService.findOne).toHaveBeenCalledTimes(1);
+      expect(playersService.findOne).toHaveBeenCalledWith(1);
+
+      expect(prismaService.player.update).toHaveBeenCalledTimes(1);
+      expect(prismaService.player.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: updatePlayerDtoMock,
+      })
+
+      expect(message).toEqual('Informations sauvegardée avec succès');
+    })
+
+    it('then throw error if player does not exist', async () => {
+      const updatePlayerDtoMock = playerStub();
+      delete updatePlayerDtoMock.id;
+
+      jest.spyOn(playersService, 'findOne').mockRejectedValue(new NotFoundException());
+
+      // Assertions
+      await expect(playersService.update(1, playerStub())).rejects.toThrow(NotFoundException);
+
+      expect(playersService.findOne).toHaveBeenCalledTimes(1);
+      expect(playersService.findOne).toHaveBeenCalledWith(1);
+    })
+
+    it('then throw error if player with the same firstname and lastname already exists with different id', async () => {
+      const mockPlayer = playerStub();
+      const updatePlayerDtoMock = playerStub();
+      delete updatePlayerDtoMock.id;
+
+      jest.spyOn(playersService, 'findOne').mockResolvedValue(mockPlayer);
+      (prismaService.player.update as jest.Mock).mockRejectedValue({
+        code: 'P2002'
+      })
+
+      // Assertions
+      await expect(playersService.update(1, updatePlayerDtoMock)).rejects.toThrow(ConflictException);
+
+      expect(playersService.findOne).toHaveBeenCalledTimes(1);
+      expect(playersService.findOne).toHaveBeenCalledWith(1);
+
+      expect(prismaService.player.update).toHaveBeenCalledTimes(1);
+      expect(prismaService.player.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: updatePlayerDtoMock,
+      })
+    })
+
+    it('then throw BadRequestException for other errors', async () => {
+      const mockPlayer = playerStub();
+      const updatePlayerDtoMock = playerStub();
+      delete updatePlayerDtoMock.id;
+
+      jest.spyOn(playersService, 'findOne').mockResolvedValue(mockPlayer);
+      (prismaService.player.update as jest.Mock).mockRejectedValue(new Error('something went wrong'));
+
+      // Assertions
+      await expect(playersService.update(1, updatePlayerDtoMock)).rejects.toThrow(BadRequestException);
+
+      expect(playersService.findOne).toHaveBeenCalledTimes(1);
+      expect(playersService.findOne).toHaveBeenCalledWith(1);
+
+      expect(prismaService.player.update).toHaveBeenCalledTimes(1);
+      expect(prismaService.player.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: updatePlayerDtoMock,
+      })
+    })
+  });
 });
 
 
