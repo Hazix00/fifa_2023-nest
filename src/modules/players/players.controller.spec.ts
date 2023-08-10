@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PlayersController } from './players.controller';
 import { PlayersService } from './players.service';
-import { playerStub, playersPaginatedStub, playersStub } from './test/stubs/players.stubs';
+import { playerStub, playersPaginatedStub, playersStub, updatePlayerPictureDto } from './test/stubs/players.stubs';
 import { CreatePlayerDto } from './dtos';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 
@@ -20,6 +20,7 @@ describe('PlayersController', () => {
           useValue: {
             findAll: jest.fn(),
             create: jest.fn(),
+            updatePlayerPicture: jest.fn(),
           },
         },
       ],
@@ -111,5 +112,24 @@ describe('PlayersController', () => {
       expect(playersService.create).toBeCalledWith(mockCreatePlayer);
 
     }) 
+  })
+
+  describe('when updatePlayerPicture is called', () => {
+
+    test('then updatePlayerPicture should be called', async () => {
+      expect(playersService.updatePlayerPicture).toBeDefined();
+    })
+    
+    test('then updatePlayerPicture should be called and return "Photo sauvegardée avec succès"', async () => {
+      (playersService.updatePlayerPicture as jest.Mock).mockResolvedValue('Photo sauvegardée avec succès');
+      
+      const updateDto = updatePlayerPictureDto();
+      const result = await playersController.updatePlayerPicture(updateDto.playerId, updateDto.file);
+
+      //Assertions
+      expect(playersService.updatePlayerPicture).toHaveBeenCalledTimes(1);
+      expect(playersService.updatePlayerPicture).toHaveBeenCalledWith(updateDto.playerId, updateDto.file);
+      expect(result).toEqual('Photo sauvegardée avec succès');
+    })
   })
 });
