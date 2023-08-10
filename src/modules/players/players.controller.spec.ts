@@ -3,7 +3,7 @@ import { PlayersController } from './players.controller';
 import { PlayersService } from './players.service';
 import { playerStub, playersPaginatedStub, playersStub, updatePlayerPictureDto } from './test/stubs/players.stubs';
 import { CreatePlayerDto } from './dtos';
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 
 jest.mock('./players.service');
 
@@ -18,8 +18,10 @@ describe('PlayersController', () => {
         {
           provide: PlayersService,
           useValue: {
+            findOne: jest.fn(),
             findAll: jest.fn(),
             create: jest.fn(),
+            update: jest.fn(),
             updatePlayerPicture: jest.fn(),
           },
         },
@@ -132,4 +134,59 @@ describe('PlayersController', () => {
       expect(result).toEqual('Photo sauvegardée avec succès');
     })
   })
+
+  describe('when update is called', () => {
+    test('then update should be defined', () => {
+      expect(playersController.update).toBeDefined();
+    });
+    test('then update should be called and return the updated player', async () => {
+      const updatePlayerDtoMock = playerStub();
+      delete updatePlayerDtoMock.id;
+      (playersService.update as jest.Mock).mockResolvedValue('Informations sauvegardée avec succès');
+      const message = await playersController.update(1, updatePlayerDtoMock);
+
+      //Assertions
+      expect(playersService.update).toHaveBeenCalledTimes(1);
+      expect(playersService.update).toHaveBeenCalledWith(1, updatePlayerDtoMock);
+      expect(message).toEqual('Informations sauvegardée avec succès');
+    });
+
+    test('then throw error if player does not exist', async () => {
+      const updatePlayerDtoMock = playerStub();
+      delete updatePlayerDtoMock.id;
+      (playersService.update as jest.Mock).mockRejectedValue(new NotFoundException('Player not found'));
+      
+      await expect(playersController.update(1, updatePlayerDtoMock)).rejects.toThrowError(NotFoundException);
+
+      //Assertions
+      expect(playersService.update).toHaveBeenCalledTimes(1);
+      expect(playersService.update).toHaveBeenCalledWith(1, updatePlayerDtoMock);
+    })
+
+    test('then throw error if player with the same firstname and lastname already exists with different id', async () => {
+      const updatePlayerDtoMock = playerStub();
+      delete updatePlayerDtoMock.id;
+
+      (playersService.update as jest.Mock).mockRejectedValue(new ConflictException('Player already exists'));
+
+      await expect(playersController.update(1, updatePlayerDtoMock)).rejects.toThrowError(ConflictException);
+
+      //Assertions
+      expect(playersService.update).toHaveBeenCalledTimes(1);
+      expect(playersService.update).toHaveBeenCalledWith(1, updatePlayerDtoMock);
+    })
+
+    test('then throw BadRequestException for other errors', async () => {
+      const updatePlayerDtoMock = playerStub();
+      delete updatePlayerDtoMock.id;
+
+      (playersService.update as jest.Mock).mockRejectedValue(new BadRequestException('Error while updating player'));
+
+      await expect(playersController.update(1, updatePlayerDtoMock)).rejects.toThrowError(BadRequestException);
+
+      //Assertions
+      expect(playersService.update).toHaveBeenCalledTimes(1);
+      expect(playersService.update).toHaveBeenCalledWith(1, updatePlayerDtoMock);
+    })
+  });
 });
